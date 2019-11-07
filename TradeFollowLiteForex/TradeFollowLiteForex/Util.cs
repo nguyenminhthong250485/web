@@ -1,10 +1,26 @@
 ﻿using HtmlAgilityPack;
 using System;
-
+using System.Text;
+using System.Security.Cryptography;
 namespace TradeFollowLiteForex
 {
     public class Util
     {
+        public static string MD5(string str)
+        {
+            byte[] originalBytes;
+            byte[] encodedBytes;
+            MD5 md5;
+
+            //Instantiate MD5CryptoServiceProvider, get bytes for original string and compute hash
+            md5 = new MD5CryptoServiceProvider();
+            originalBytes = ASCIIEncoding.Default.GetBytes(str);
+            encodedBytes = md5.ComputeHash(originalBytes);
+
+            //Convert encoded bytes back to a 'readable' string
+            string hashed = BitConverter.ToString(encodedBytes).Replace("-", "").ToLower();
+            return hashed;
+        }
         public static string GetSubstringByString(string text, string a, string b)
         {
             try
