@@ -23,87 +23,58 @@ namespace TradeFollowLiteForex
         static void Main(string[] args)
         {
             Bot = new TelegramBotClient(token);
-            Thread SendSignal;
-            SendSignal = new Thread(delegate ()
-            {
-                string OldMD5 = db_SendSignal.GetOldMD5();
-                try
-                {
-                    while (true)
-                    {
-                        order neworder = new order();
-                        neworder = db_SendSignal.GetNewOrder(OldMD5);
-                        if (neworder == null) continue;
-                        if (neworder.username == "RUBI"|| neworder.username == "Kudji")
-                        {
-                            string signal = db_SendSignal.SendSignalOrder(neworder, "l", "scalping");
-                            OldMD5 += neworder.md5 + "|";
-                            Bot.SendTextMessageAsync(635860813, signal);
-                        }
-                        Thread.Sleep(500);
-                    }
-                }
-                catch(Exception ex)
-                {
-                    Console.WriteLine("SendSignal: "+ex.Message);
-                    Console.WriteLine("SendSignal: " + ex.StackTrace);
-                }
-            });
-            //SendSignal.Start();
 
             Thread SendOrderToTrade;
             SendOrderToTrade = new Thread(delegate ()
             {
+                Thread.Sleep(1000 * 60);
                 string OldMD5 = db_SendOrderToTrade.GetOldMD5();
                 try
                 {
                     while (true)
                     {
-                        order neworder = new order();
-                        neworder = db_SendOrderToTrade.GetNewOrder(OldMD5);
-                        if (neworder == null) continue;
-                        if (neworder.username == "anhsangfx")
+                        List<mastertrader> newmastertraders = db_SendOrderToTrade.GetNewMastertrader(OldMD5);
+                        if (newmastertraders.Count == 0) continue;
+                        foreach (mastertrader newmastertrader in newmastertraders)
                         {
-                            nonlive newordertrade = new nonlive();
-                            newordertrade.chatid = 635860813;
-                            newordertrade.username = "thong250485";
-                            string command = db_SendOrderToTrade.SendOrderToTrade(neworder, "thong250485@l", "scalping");
-                            OldMD5 += neworder.md5 + "|";
-                            string keyword = command.Split(' ')[0];
-                            newordertrade.keyword = keyword;
-                            newordertrade.name_mt4 = "thong250485@l";
-                            newordertrade.command = command;
-                            newordertrade.datetime = DateTime.Now.ToString();
-                            db_SendOrderToTrade.InsertNonLive(newordertrade);
-                        }
-                        if(neworder.username == "Alexngo_vn" || neworder.username == "Happytrader")
-                        {
-
-                        }
-                        if (neworder.username == "RUBI" || neworder.username == "Kudji")
-                        {
-                            nonlive newordertrade = new nonlive();
-                            newordertrade.chatid = 635860813;
-                            newordertrade.username = "thong250485";
-                            string command = db_SendOrderToTrade.SendOrderToTrade(neworder, "thong250485@l");
-                            OldMD5 += neworder.md5 + "|";
-                            string keyword = command.Split(' ')[0];
-                            newordertrade.keyword = keyword;
-                            newordertrade.name_mt4 = "thong250485@l";
-                            newordertrade.command = command;
-                            newordertrade.datetime = DateTime.Now.ToString();
-                            db_SendOrderToTrade.InsertNonLive(newordertrade);
+                            if (newmastertrader.username == "Alexngo_vn" || newmastertrader.username == "Happytrader")
+                            {
+                                nonlive newmastertradertrade = new nonlive();
+                                newmastertradertrade.chatid = 635860813;
+                                newmastertradertrade.username = "thong250485";
+                                string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@l");
+                                OldMD5 += newmastertrader.md5 + "|";
+                                string keyword = command.Split(' ')[0];
+                                newmastertradertrade.keyword = keyword;
+                                newmastertradertrade.name_mt4 = "thong250485@l";
+                                newmastertradertrade.command = command;
+                                newmastertradertrade.datetime = DateTime.Now.ToString();
+                                db_SendOrderToTrade.InsertNonLive(newmastertradertrade);
+                            }
+                            if (newmastertrader.username == "RUBI" || newmastertrader.username == "Kudji")
+                            {
+                                nonlive newmastertradertrade = new nonlive();
+                                newmastertradertrade.chatid = 635860813;
+                                newmastertradertrade.username = "thong250485";
+                                string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@l");
+                                OldMD5 += newmastertrader.md5 + "|";
+                                string keyword = command.Split(' ')[0];
+                                newmastertradertrade.keyword = keyword;
+                                newmastertradertrade.name_mt4 = "thong250485@l";
+                                newmastertradertrade.command = command;
+                                newmastertradertrade.datetime = DateTime.Now.ToString();
+                                db_SendOrderToTrade.InsertNonLive(newmastertradertrade);
+                            }
                         }
                         Thread.Sleep(500);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("SendOrderToTrade: " + ex.Message);
                     Console.WriteLine("SendOrderToTrade: " + ex.StackTrace);
                 }
             });
-            SendOrderToTrade.Start();
+            //SendOrderToTrade.Start();
 
             Thread Kudji;
             bool runKudji = true;
@@ -111,6 +82,7 @@ namespace TradeFollowLiteForex
             {
                 while (true)
                 {
+                    string str_hashmd5 = "";
                     var client = new RestClient("https://my.liteforex.com");
                     var request = new RestRequest("vi/traders/trades?id=458257", Method.GET);//@Kudji
                     IRestResponse response = client.Execute(request);
@@ -120,41 +92,48 @@ namespace TradeFollowLiteForex
                     {
                         HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
                         if (div_content_rows.Count == 0) continue;
-                        List<order> orders = new List<order>();
+                        List<mastertrader> newmastertraders = new List<mastertrader>();
                         foreach (HtmlNode div_content_row in div_content_rows)
                         {
                             string html_div_content_row = div_content_row.InnerHtml;
                             HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            order neworder = new order();
-                            neworder.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
+                            mastertrader newmastertrader = new mastertrader();
+                            newmastertrader.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
                             string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            neworder.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
+                            newmastertrader.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
+                            newmastertrader.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
                             double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.openprice = openprice;
+                            newmastertrader.openprice = openprice;
                             double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.currentprice = currentprice;
-                            if (typeorder == "Mua") neworder.typeorder = 0;
-                            else if (typeorder == "Bán") neworder.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) neworder.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) neworder.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) neworder.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) neworder.typeorder = 5;
-                            else neworder.typeorder = 6;
-                            neworder.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            orders.Add(neworder);
-                            string info_InsertOrder = db_Kudji.InsertOrder(orders[0], "Lite", "Kudji");
-                            if (info_InsertOrder == "duplicate")
-                            {
-                                break;
-                            }
-                            else if (info_InsertOrder == "error")
+                            newmastertrader.currentprice = currentprice;
+                            if (typeorder == "Mua") newmastertrader.typeorder = 0;
+                            else if (typeorder == "Bán") newmastertrader.typeorder = 1;
+                            else if (typeorder == "Muatại" && openprice < currentprice) newmastertrader.typeorder = 2;
+                            else if (typeorder == "Bántại" && openprice > currentprice) newmastertrader.typeorder = 3;
+                            else if (typeorder == "Muatại" && openprice > currentprice) newmastertrader.typeorder = 4;
+                            else if (typeorder == "Bántại" && openprice < currentprice) newmastertrader.typeorder = 5;
+                            else newmastertrader.typeorder = 6;
+                            newmastertrader.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
+                            newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
+                            newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
+                            newmastertraders.Add(newmastertrader);
+                            string info_InsertOrder = db_Kudji.InsertMastertrader(newmastertraders[0], "Lite", "Kudji");
+
+                            str_hashmd5 += Util.MD5(newmastertrader.datetime + "Kudji" + "Lite") + ",";
+
+                            if (info_InsertOrder == "error")
                             {
                                 Console.WriteLine("Lite@Kudji");
                                 runKudji = false;
                                 break;
+                            }
+                        }
+                        List<mastertrader> MastertraderKudjis = db_Kudji.GetMastertraderByUsername("Kudji");
+                        foreach (mastertrader MastertraderKudji in MastertraderKudjis)
+                        {
+                            if(db_Kudji.DeleteClosemastertrader(MastertraderKudji.md5,str_hashmd5))
+                            {
+                                Console.WriteLine("Lite@Kudji");
                             }
                         }
                     }
@@ -176,6 +155,7 @@ namespace TradeFollowLiteForex
             {
                 while (true)
                 {
+                    string str_hashmd5 = "";
                     var client = new RestClient("https://my.liteforex.com");
                     var request = new RestRequest("vi/traders/trades?id=793606", Method.GET);//@RUBI
                     IRestResponse response = client.Execute(request);
@@ -183,45 +163,7 @@ namespace TradeFollowLiteForex
                     if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")) continue;
                     try
                     {
-                        HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
-                        if (div_content_rows.Count == 0) continue;
-                        List<order> orders = new List<order>();
-                        foreach (HtmlNode div_content_row in div_content_rows)
-                        {
-                            string html_div_content_row = div_content_row.InnerHtml;
-                            HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            order neworder = new order();
-                            neworder.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
-                            string typeorder= div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            neworder.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
-                            double openprice= double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.openprice = openprice;
-                            double currentprice= double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.currentprice = currentprice;
-                            if (typeorder == "Mua") neworder.typeorder = 0;
-                            else if (typeorder == "Bán") neworder.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) neworder.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) neworder.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) neworder.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) neworder.typeorder = 5;
-                            else neworder.typeorder = 6;
-                            neworder.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            orders.Add(neworder);
-                            string info_InsertOrder = db_RUBI.InsertOrder(orders[0], "Lite", "RUBI");
-                            if (info_InsertOrder == "duplicate")
-                            {
-                                break;
-                            }
-                            else if (info_InsertOrder == "error")
-                            {
-                                Console.WriteLine("Lite@RUBI");
-                                runRUBI = false;
-                                break;
-                            }
-                        }
+                        
                     }
                     catch(Exception ex)
                     {
@@ -231,7 +173,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            RUBI.Start();
+            //RUBI.Start();
             if (runRUBI == false)
                 RUBI.Abort();
 
@@ -249,44 +191,7 @@ namespace TradeFollowLiteForex
                     if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")) continue;
                     try
                     {
-                        HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
-                        List<order> orders = new List<order>();
-                        foreach (HtmlNode div_content_row in div_content_rows)
-                        {
-                            string html_div_content_row = div_content_row.InnerHtml;
-                            HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            order neworder = new order();
-                            neworder.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
-                            string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            neworder.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
-                            double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.openprice = openprice;
-                            double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.currentprice = currentprice;
-                            if (typeorder == "Mua") neworder.typeorder = 0;
-                            else if (typeorder == "Bán") neworder.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) neworder.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) neworder.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) neworder.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) neworder.typeorder = 5;
-                            else neworder.typeorder = 6;
-                            neworder.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            orders.Add(neworder);
-                            string info_InsertOrder = db_anhsangfx.InsertOrder(orders[0], "Lite", "anhsangfx");
-                            if (info_InsertOrder == "duplicate")
-                            {
-                                break;
-                            }
-                            else if (info_InsertOrder == "error")
-                            {
-                                Console.WriteLine("Lite@anhsangfx");
-                                runanhsangfx = false;
-                                break;
-                            }
-                        }
+                        
                     }
                     catch (Exception ex)
                     {
@@ -296,7 +201,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            anhsangfx.Start();
+            //anhsangfx.Start();
             if (runanhsangfx == false)
                 anhsangfx.Abort();
 
@@ -313,45 +218,7 @@ namespace TradeFollowLiteForex
                     if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")) continue;
                     try
                     {
-                        HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
-                        if (div_content_rows.Count == 0) continue;
-                        List<order> orders = new List<order>();
-                        foreach (HtmlNode div_content_row in div_content_rows)
-                        {
-                            string html_div_content_row = div_content_row.InnerHtml;
-                            HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            order neworder = new order();
-                            neworder.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
-                            string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            neworder.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
-                            double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.openprice = openprice;
-                            double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.currentprice = currentprice;
-                            if (typeorder == "Mua") neworder.typeorder = 0;
-                            else if (typeorder == "Bán") neworder.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) neworder.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) neworder.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) neworder.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) neworder.typeorder = 5;
-                            else neworder.typeorder = 6;
-                            neworder.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            orders.Add(neworder);
-                            string info_InsertOrder = db_Alexngo_vn.InsertOrder(orders[0], "Lite", "Alexngo_vn");
-                            if (info_InsertOrder == "duplicate")
-                            {
-                                break;
-                            }
-                            else if (info_InsertOrder == "error")
-                            {
-                                Console.WriteLine("Lite@Alexngo_vn");
-                                runAlexngo_vn = false;
-                                break;
-                            }
-                        }
+                        
                     }
                     catch (Exception ex)
                     {
@@ -361,7 +228,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            Alexngo_vn.Start();
+            //Alexngo_vn.Start();
             if (runAlexngo_vn == false)
                 Alexngo_vn.Abort();
 
@@ -378,45 +245,7 @@ namespace TradeFollowLiteForex
                     if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")) continue;
                     try
                     {
-                        HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
-                        if (div_content_rows.Count == 0) continue;
-                        List<order> orders = new List<order>();
-                        foreach (HtmlNode div_content_row in div_content_rows)
-                        {
-                            string html_div_content_row = div_content_row.InnerHtml;
-                            HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            order neworder = new order();
-                            neworder.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
-                            string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            neworder.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
-                            double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.openprice = openprice;
-                            double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.currentprice = currentprice;
-                            if (typeorder == "Mua") neworder.typeorder = 0;
-                            else if (typeorder == "Bán") neworder.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) neworder.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) neworder.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) neworder.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) neworder.typeorder = 5;
-                            else neworder.typeorder = 6;
-                            neworder.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            orders.Add(neworder);
-                            string info_InsertOrder = db_Happytrader.InsertOrder(orders[0], "Lite", "Happytrader");
-                            if (info_InsertOrder == "duplicate")
-                            {
-                                break;
-                            }
-                            else if (info_InsertOrder == "error")
-                            {
-                                Console.WriteLine("Lite@Happytrader");
-                                runHappytrader = false;
-                                break;
-                            }
-                        }
+                        
                     }
                     catch (Exception ex)
                     {
@@ -426,7 +255,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            Happytrader.Start();
+            //Happytrader.Start();
             if (runHappytrader == false)
                 Happytrader.Abort();
 
@@ -443,43 +272,7 @@ namespace TradeFollowLiteForex
                     if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")) continue;
                     try
                     {
-                        HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
-                        List<order> orders = new List<order>();
-                        foreach (HtmlNode div_content_row in div_content_rows)
-                        {
-                            string html_div_content_row = div_content_row.InnerHtml;
-                            HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            order neworder = new order();
-                            neworder.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
-                            string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            neworder.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
-                            double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.openprice = openprice;
-                            double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.currentprice = currentprice;
-                            if (typeorder == "Mua") neworder.typeorder = 0;
-                            else if (typeorder == "Bán") neworder.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) neworder.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) neworder.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) neworder.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) neworder.typeorder = 5;
-                            else neworder.typeorder = 6;
-                            neworder.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            neworder.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            orders.Add(neworder);
-                            if (db_HerryDuc.InsertOrder(orders[0], "Lite", "HerryDuc") == "duplicate")
-                            {
-                                break;
-                            }
-                            if (db_HerryDuc.InsertOrder(orders[0], "Lite", "HerryDuc") == "error")
-                            {
-                                Console.WriteLine("Lite@HerryDuc");
-                                runHerryDuc = false;
-                                break;
-                            }
-                        }
+                        
                     }
                     catch (Exception ex)
                     {
