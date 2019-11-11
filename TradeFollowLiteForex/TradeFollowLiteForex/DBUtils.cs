@@ -34,6 +34,7 @@ namespace TradeFollowLiteForex
         public int id;
         public string broker;
         public int numbermt4;
+        public string namemt4;
         public string symbol;
         public int typeorder;
         public double size;
@@ -345,7 +346,7 @@ namespace TradeFollowLiteForex
         {
             List<copytrade> copytrades = new List<copytrade>();
             ConnectDB();
-            string sql = "SELECT * FROM mastertrader WHERE comment=@comment";
+            string sql = "SELECT * FROM copytrade WHERE comment=@comment";
             MySqlCommand cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@comment", comment);
             try
@@ -358,6 +359,7 @@ namespace TradeFollowLiteForex
                         result.id = reader.GetInt16("id");
                         result.broker = reader.GetString("broker");
                         result.numbermt4 = reader.GetInt32("numbermt4");
+                        result.namemt4 = reader.GetString("namemt4");
                         result.symbol = reader.GetString("symbol");
                         result.typeorder = reader.GetInt16("typeorder");
                         result.size = reader.GetDouble("size");
@@ -383,6 +385,11 @@ namespace TradeFollowLiteForex
             }
             CloseDB();
             return copytrades;
+        }
+        public string SendOrderToClose(int ticket,string namemt4)
+        {
+            string result = "closeticket " + ticket.ToString() + " " + namemt4;
+            return result;
         }
     }
 }
