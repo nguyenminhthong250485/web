@@ -74,7 +74,7 @@ namespace TradeFollowLiteForex
                     Console.WriteLine("SendOrderToTrade: " + ex.StackTrace);
                 }
             });
-            //SendOrderToTrade.Start();
+            SendOrderToTrade.Start();
 
             Thread Kudji;
             bool runKudji = true;
@@ -117,15 +117,17 @@ namespace TradeFollowLiteForex
                             newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
                             newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
                             newmastertraders.Add(newmastertrader);
-                            string info_InsertOrder = db_Kudji.InsertMastertrader(newmastertraders[0], "Lite", "Kudji");
 
                             str_hashmd5 += Util.MD5(newmastertrader.datetime + "Kudji" + "Lite") + ",";
 
+                        }
+                        foreach(mastertrader newmastertrader in newmastertraders)
+                        {
+                            string info_InsertOrder = db_Kudji.InsertMastertrader(newmastertrader, "Lite", "Kudji");
                             if (info_InsertOrder == "error")
                             {
                                 Console.WriteLine("Lite@Kudji");
-                                runKudji = false;
-                                break;
+                                return;
                             }
                         }
                         List<mastertrader> MastertraderKudjis = db_Kudji.GetMastertraderByUsername("Kudji");
