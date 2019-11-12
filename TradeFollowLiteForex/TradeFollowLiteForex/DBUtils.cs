@@ -15,6 +15,7 @@ namespace TradeFollowLiteForex
     }
     struct mastertrader
     {
+        public int id;
         public string sourcedata;
         public string username;
         public string symbol;
@@ -130,6 +131,7 @@ namespace TradeFollowLiteForex
                     while (reader.Read())
                     {
                         mastertrader tam = new mastertrader();
+                        tam.id = reader.GetInt16("id");
                         tam.sourcedata = reader.GetString("sourcedata");
                         tam.username = reader.GetString("username");
                         tam.symbol = reader.GetString("symbol");
@@ -236,6 +238,7 @@ namespace TradeFollowLiteForex
                         if (oldmd5.Contains(md5hash) == false)
                         {
                             mastertrader tam = new mastertrader();
+                            tam.id = reader.GetInt16("id");
                             tam.sourcedata = reader.GetString("sourcedata");
                             tam.username = reader.GetString("username");
                             tam.symbol = reader.GetString("symbol");
@@ -337,9 +340,9 @@ namespace TradeFollowLiteForex
             else if (newmastertrader.typeorder == 4) typeorder = "buystop";
             else if (newmastertrader.typeorder == 5) typeorder = "sellstop";
             if (mode == "absolute")
-                result += typeorder + " " + newmastertrader.symbol + " " + newmastertrader.size + " " + newmastertrader.openprice + " " + newmastertrader.stoploss + " " + newmastertrader.takeprofit + " " + newmastertrader.md5 + " " + namemt4;
+                result += typeorder + " " + newmastertrader.symbol + " " + newmastertrader.size + " " + newmastertrader.openprice + " " + newmastertrader.stoploss + " " + newmastertrader.takeprofit + " idmastertrader=" + newmastertrader.id + " " + namemt4;
             else if (mode == "scalping")
-                result += typeorder + " " + newmastertrader.symbol + " " + newmastertrader.size + " " + newmastertrader.openprice + " -1 -1 " + newmastertrader.username + " " + namemt4;
+                result += typeorder + " " + newmastertrader.symbol + " " + newmastertrader.size + " " + newmastertrader.openprice + " -1 -1 " + " idmastertrader=" + newmastertrader.id + " " + namemt4;
             return result;
         }
         public List<copytrade> GetCopytradeByComment(string comment)

@@ -13,7 +13,7 @@ namespace TradeFollowLiteForex
         private static DBUtils db_program = new DBUtils("program");
         private static DBUtils db_Kudji = new DBUtils("Kudji");
         private static DBUtils db_RUBI = new DBUtils("RUBI");
-        private static DBUtils db_anhsangfx = new DBUtils("anhsangfx");
+        private static DBUtils db_StevenHulk = new DBUtils("StevenHulk");
         private static DBUtils db_Alexngo_vn = new DBUtils("Alexngo_vn");//Happytrader
         private static DBUtils db_Happytrader = new DBUtils("Happytrader");
         private static DBUtils db_SendOrderToTrade = new DBUtils("SendOrderToTrade");
@@ -39,31 +39,31 @@ namespace TradeFollowLiteForex
                         {
                             if (newmastertrader.username == "Alexngo_vn" || newmastertrader.username == "Happytrader")
                             {
-                                nonlive newmastertradertrade = new nonlive();
-                                newmastertradertrade.chatid = 635860813;
-                                newmastertradertrade.username = "thong250485";
+                                nonlive orderopen = new nonlive();
+                                orderopen.chatid = 635860813;
+                                orderopen.username = "thong250485";
                                 string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@l");
                                 OldMD5 += newmastertrader.md5 + "|";
                                 string keyword = command.Split(' ')[0];
-                                newmastertradertrade.keyword = keyword;
-                                newmastertradertrade.name_mt4 = "thong250485@l";
-                                newmastertradertrade.command = command;
-                                newmastertradertrade.datetime = DateTime.Now.ToString();
-                                db_SendOrderToTrade.InsertNonLive(newmastertradertrade);
+                                orderopen.keyword = keyword;
+                                orderopen.name_mt4 = "thong250485@l";
+                                orderopen.command = command;
+                                orderopen.datetime = DateTime.Now.ToString();
+                                db_SendOrderToTrade.InsertNonLive(orderopen);
                             }
-                            if (newmastertrader.username == "RUBI" || newmastertrader.username == "Kudji")
+                            if (newmastertrader.username == "RUBI" || newmastertrader.username == "Kudji" || newmastertrader.username == "StevenHulk")
                             {
-                                nonlive newmastertradertrade = new nonlive();
-                                newmastertradertrade.chatid = 635860813;
-                                newmastertradertrade.username = "thong250485";
+                                nonlive orderopen = new nonlive();
+                                orderopen.chatid = 635860813;
+                                orderopen.username = "thong250485";
                                 string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@l");
                                 OldMD5 += newmastertrader.md5 + "|";
                                 string keyword = command.Split(' ')[0];
-                                newmastertradertrade.keyword = keyword;
-                                newmastertradertrade.name_mt4 = "thong250485@l";
-                                newmastertradertrade.command = command;
-                                newmastertradertrade.datetime = DateTime.Now.ToString();
-                                db_SendOrderToTrade.InsertNonLive(newmastertradertrade);
+                                orderopen.keyword = keyword;
+                                orderopen.name_mt4 = "thong250485@l";
+                                orderopen.command = command;
+                                orderopen.datetime = DateTime.Now.ToString();
+                                db_SendOrderToTrade.InsertNonLive(orderopen);
                             }
                         }
                         Thread.Sleep(500);
@@ -135,8 +135,8 @@ namespace TradeFollowLiteForex
                         {
                             if(db_Kudji.DeleteClosemastertrader(MastertraderKudji.md5,str_hashmd5))
                             {
-                                string md5del = MastertraderKudji.md5;
-                                List<copytrade> CopyTrades = db_Kudji.GetCopytradeByComment(md5del);
+                                string commentdel = "mastertrader=" + MastertraderKudji.id;
+                                List<copytrade> CopyTrades = db_Kudji.GetCopytradeByComment(commentdel);
                                 foreach(copytrade CopyTrade in CopyTrades)
                                 {
                                     int ticketclose = CopyTrade.ticket;
@@ -154,7 +154,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            Kudji.Start();
+            //Kudji.Start();
             if (runKudji == false)
                 Kudji.Abort();
 
@@ -239,85 +239,99 @@ namespace TradeFollowLiteForex
                 RUBI.Abort();
 
 
-            Thread anhsangfx;
-            bool runanhsangfx = true;
-            anhsangfx = new Thread(delegate ()
+            Thread StevenHulk;
+            bool runStevenHulk = true;
+            StevenHulk = new Thread(delegate ()
             {
                 while (true)
                 {
                     var client = new RestClient("https://my.liteforex.com");
-                    var request = new RestRequest("vi/traders/trades?id=846465", Method.GET);//@Happytrader
+                    var request = new RestRequest("vi/traders/trades?id=852158", Method.GET);//@Happytrader
                     IRestResponse response = client.Execute(request);
                     string html = response.Content;
                     string str_hashmd5 = "";
-                    if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")) continue;
                     try
                     {
-                        HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
-                        if (div_content_rows.Count == 0) continue;
-                        List<mastertrader> newmastertraders = new List<mastertrader>();
-                        foreach (HtmlNode div_content_row in div_content_rows)
+                        if (html.Contains("Nhà giao dịch không có giao dịch mở hiện tại")==false)
                         {
-                            string html_div_content_row = div_content_row.InnerHtml;
-                            HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
-                            mastertrader newmastertrader = new mastertrader();
-                            newmastertrader.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
-                            string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
-                            newmastertrader.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
-                            newmastertrader.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
-                            double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
-                            newmastertrader.openprice = openprice;
-                            double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
-                            newmastertrader.currentprice = currentprice;
-                            if (typeorder == "Mua") newmastertrader.typeorder = 0;
-                            else if (typeorder == "Bán") newmastertrader.typeorder = 1;
-                            else if (typeorder == "Muatại" && openprice < currentprice) newmastertrader.typeorder = 2;
-                            else if (typeorder == "Bántại" && openprice > currentprice) newmastertrader.typeorder = 3;
-                            else if (typeorder == "Muatại" && openprice > currentprice) newmastertrader.typeorder = 4;
-                            else if (typeorder == "Bántại" && openprice < currentprice) newmastertrader.typeorder = 5;
-                            else newmastertrader.typeorder = 6;
-                            newmastertrader.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
-                            newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
-                            newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
-                            newmastertraders.Add(newmastertrader);
-                            string info_InsertOrder = db_anhsangfx.InsertMastertrader(newmastertraders[0], "Lite", "");
-
-                            str_hashmd5 += Util.MD5(newmastertrader.datetime + "anhsangfx" + "Lite") + ",";
-
-                            if (info_InsertOrder == "error")
+                            HtmlNodeCollection div_content_rows = Util.HtmlGetNodeCollection(html, "//div[@class='content_row']");
+                            if (div_content_rows.Count == 0) continue;
+                            List<mastertrader> newmastertraders = new List<mastertrader>();
+                            foreach (HtmlNode div_content_row in div_content_rows)
                             {
-                                Console.WriteLine("Lite@anhsangfx");
-                                runanhsangfx = false;
-                                break;
+                                string html_div_content_row = div_content_row.InnerHtml;
+                                HtmlNodeCollection div_content_cols = Util.HtmlGetNodeCollection(html_div_content_row, "//div[@class='content_col']");
+                                mastertrader newmastertrader = new mastertrader();
+                                newmastertrader.symbol = div_content_cols[0].InnerText.Replace(" ", "").Replace("\n", "");
+                                string typeorder = div_content_cols[1].InnerText.Replace(" ", "").Replace("\n", "");
+                                newmastertrader.size = double.Parse(div_content_cols[2].InnerText.Replace(" ", "").Replace("\n", ""));
+                                newmastertrader.datetime = div_content_cols[3].InnerText.Replace(" ", "").Replace("\n", "");
+                                double openprice = double.Parse(div_content_cols[4].InnerText.Replace(" ", "").Replace("\n", ""));
+                                newmastertrader.openprice = openprice;
+                                double currentprice = double.Parse(div_content_cols[5].InnerText.Replace(" ", "").Replace("\n", ""));
+                                newmastertrader.currentprice = currentprice;
+                                if (typeorder == "Mua") newmastertrader.typeorder = 0;
+                                else if (typeorder == "Bán") newmastertrader.typeorder = 1;
+                                else if (typeorder == "Muatại" && openprice < currentprice) newmastertrader.typeorder = 2;
+                                else if (typeorder == "Bántại" && openprice > currentprice) newmastertrader.typeorder = 3;
+                                else if (typeorder == "Muatại" && openprice > currentprice) newmastertrader.typeorder = 4;
+                                else if (typeorder == "Bántại" && openprice < currentprice) newmastertrader.typeorder = 5;
+                                else newmastertrader.typeorder = 6;
+                                newmastertrader.stoploss = double.Parse(div_content_cols[6].InnerText.Replace(" ", "").Replace("\n", ""));
+                                newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
+                                newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
+                                newmastertraders.Add(newmastertrader);
+
+                                str_hashmd5 += Util.MD5(newmastertrader.datetime + "StevenHulk" + "Lite") + ",";
+
+                            }
+                            foreach (mastertrader newmastertrader in newmastertraders)
+                            {
+                                string info_InsertOrder = db_StevenHulk.InsertMastertrader(newmastertrader, "Lite", "StevenHulk");
+                                if (info_InsertOrder == "error")
+                                {
+                                    Console.WriteLine("Lite@StevenHulk");
+                                    return;
+                                }
                             }
                         }
-                        List<mastertrader> Mastertraderanhsangfxs = db_anhsangfx.GetMastertraderByUsername("anhsangfx");
-                        foreach (mastertrader Mastertraderanhsangfx in Mastertraderanhsangfxs)
+                        List<mastertrader> MastertraderStevenHulks = db_StevenHulk.GetMastertraderByUsername("StevenHulk");
+                        foreach (mastertrader MastertraderStevenHulk in MastertraderStevenHulks)
                         {
-                            if (db_anhsangfx.DeleteClosemastertrader(Mastertraderanhsangfx.md5, str_hashmd5))
+                            if (db_StevenHulk.DeleteClosemastertrader(MastertraderStevenHulk.md5, str_hashmd5))
                             {
-                                string md5del = Mastertraderanhsangfx.md5;
-                                List<copytrade> CopyTrades = db_anhsangfx.GetCopytradeByComment(md5del);
+                                string commentdel = "idmastertrader=" + MastertraderStevenHulk.id;
+                                List<copytrade> CopyTrades = db_StevenHulk.GetCopytradeByComment(commentdel);
                                 foreach (copytrade CopyTrade in CopyTrades)
                                 {
+                                    nonlive orderclose = new nonlive();
+                                    orderclose.chatid = 635860813;
+                                    orderclose.username = CopyTrade.namemt4.Split('@')[0];
+
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    db_anhsangfx.SendOrderToClose(ticketclose, namemt4close);
+                                    string command = db_StevenHulk.SendOrderToClose(ticketclose, namemt4close);
+                                    string keyword = command.Split(' ')[0];
+                                    orderclose.keyword = keyword;
+                                    orderclose.name_mt4 = CopyTrade.namemt4;
+                                    orderclose.command = command;
+                                    orderclose.datetime = DateTime.Now.ToString();
+                                    db_StevenHulk.InsertNonLive(orderclose);
                                 }
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Bot.SendTextMessageAsync(635860813, "Lite@anhsangfx: " + ex.StackTrace);
-                        runanhsangfx = false;
+                        Bot.SendTextMessageAsync(635860813, "Lite@StevenHulk: " + ex.StackTrace);
+                        runStevenHulk = false;
                     }
                     Thread.Sleep(500);
                 }
             });
-            //anhsangfx.Start();
-            if (runanhsangfx == false)
-                anhsangfx.Abort();
+            StevenHulk.Start();
+            if (runStevenHulk == false)
+                StevenHulk.Abort();
 
             Thread Alexngo_vn;
             bool runAlexngo_vn = true;
