@@ -345,13 +345,14 @@ namespace TradeFollowLiteForex
                 result += typeorder + " " + newmastertrader.symbol + " " + newmastertrader.size + " " + newmastertrader.openprice + " -1 -1 " + " idmastertrader=" + newmastertrader.id + " " + namemt4;
             return result;
         }
-        public List<copytrade> GetCopytradeByComment(string comment)
+        public List<copytrade> GetCopytradeDelByComment(string comment)
         {
             List<copytrade> copytrades = new List<copytrade>();
             ConnectDB();
-            string sql = "SELECT * FROM copytrade WHERE comment=@comment";
+            string sql = "SELECT * FROM copytrade WHERE comment=@comment AND status=@status";
             MySqlCommand cmd = new MySqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@comment", comment);
+            cmd.Parameters.AddWithValue("@status", 2);
             try
             {
                 using (MySqlDataReader reader = cmd.ExecuteReader())
@@ -389,9 +390,17 @@ namespace TradeFollowLiteForex
             CloseDB();
             return copytrades;
         }
-        public string SendOrderToClose(int ticket,string namemt4)
+        public string SendOrderToClose(int ticket,string namemt4,int typeorder)
         {
-            string result = "closeticket " + ticket.ToString() + " " + namemt4;
+            string result = "";
+            if(typeorder==0 || typeorder==1)
+            {
+                result = "closeticket " + ticket.ToString() + " " + namemt4;
+            }
+            else
+            {
+                result = "delticket " + ticket.ToString() + " " + namemt4;
+            }
             return result;
         }
     }

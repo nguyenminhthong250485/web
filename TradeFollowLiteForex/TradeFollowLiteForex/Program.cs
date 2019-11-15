@@ -37,30 +37,16 @@ namespace TradeFollowLiteForex
                         if (newmastertraders.Count == 0) continue;
                         foreach (mastertrader newmastertrader in newmastertraders)
                         {
-                            if (newmastertrader.username == "Alexngo_vn" || newmastertrader.username == "Happytrader")
+                            if (newmastertrader.username == "Alexngo_vn" || newmastertrader.username == "Happytrader" || newmastertrader.username == "RUBI")
                             {
                                 nonlive orderopen = new nonlive();
                                 orderopen.chatid = 635860813;
                                 orderopen.username = "thong250485";
-                                string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@l");
+                                string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@aifu");
                                 OldMD5 += newmastertrader.md5 + "|";
                                 string keyword = command.Split(' ')[0];
                                 orderopen.keyword = keyword;
-                                orderopen.name_mt4 = "thong250485@l";
-                                orderopen.command = command;
-                                orderopen.datetime = DateTime.Now.ToString();
-                                db_SendOrderToTrade.InsertNonLive(orderopen);
-                            }
-                            if (newmastertrader.username == "RUBI" || newmastertrader.username == "Kudji" || newmastertrader.username == "StevenHulk")
-                            {
-                                nonlive orderopen = new nonlive();
-                                orderopen.chatid = 635860813;
-                                orderopen.username = "thong250485";
-                                string command = db_SendOrderToTrade.SendOrderToTrade(newmastertrader, "thong250485@l");
-                                OldMD5 += newmastertrader.md5 + "|";
-                                string keyword = command.Split(' ')[0];
-                                orderopen.keyword = keyword;
-                                orderopen.name_mt4 = "thong250485@l";
+                                orderopen.name_mt4 = "thong250485@aifu";
                                 orderopen.command = command;
                                 orderopen.datetime = DateTime.Now.ToString();
                                 db_SendOrderToTrade.InsertNonLive(orderopen);
@@ -133,15 +119,26 @@ namespace TradeFollowLiteForex
                         List<mastertrader> MastertraderKudjis = db_Kudji.GetMastertraderByUsername("Kudji");
                         foreach (mastertrader MastertraderKudji in MastertraderKudjis)
                         {
-                            if(db_Kudji.DeleteClosemastertrader(MastertraderKudji.md5,str_hashmd5))
+                            if (db_Kudji.DeleteClosemastertrader(MastertraderKudji.md5, str_hashmd5))
                             {
-                                string commentdel = "mastertrader=" + MastertraderKudji.id;
-                                List<copytrade> CopyTrades = db_Kudji.GetCopytradeByComment(commentdel);
-                                foreach(copytrade CopyTrade in CopyTrades)
+                                string commentdel = "idmastertrader=" + MastertraderKudji.id;
+                                List<copytrade> CopyTrades = db_Kudji.GetCopytradeDelByComment(commentdel);
+                                foreach (copytrade CopyTrade in CopyTrades)
                                 {
+                                    nonlive orderclose = new nonlive();
+                                    orderclose.chatid = 635860813;
+                                    orderclose.username = CopyTrade.namemt4.Split('@')[0];
+
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    db_Kudji.SendOrderToClose(ticketclose, namemt4close);
+                                    int typeorder = CopyTrade.typeorder;
+                                    string command = db_Kudji.SendOrderToClose(ticketclose, namemt4close, typeorder);
+                                    string keyword = command.Split(' ')[0];
+                                    orderclose.keyword = keyword;
+                                    orderclose.name_mt4 = CopyTrade.namemt4;
+                                    orderclose.command = command;
+                                    orderclose.datetime = DateTime.Now.ToString();
+                                    db_Kudji.InsertNonLive(orderclose);
                                 }
                             }
                         }
@@ -199,7 +196,7 @@ namespace TradeFollowLiteForex
                             newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
                             newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
                             newmastertraders.Add(newmastertrader);
-                            string info_InsertOrder = db_RUBI.InsertMastertrader(newmastertraders[0], "Lite", "");
+                            string info_InsertOrder = db_RUBI.InsertMastertrader(newmastertraders[0], "Lite", "RUBI");
 
                             str_hashmd5 += Util.MD5(newmastertrader.datetime + "RUBI" + "Lite") + ",";
 
@@ -215,13 +212,24 @@ namespace TradeFollowLiteForex
                         {
                             if (db_RUBI.DeleteClosemastertrader(MastertraderRUBI.md5, str_hashmd5))
                             {
-                                string md5del = MastertraderRUBI.md5;
-                                List<copytrade> CopyTrades = db_RUBI.GetCopytradeByComment(md5del);
+                                string commentdel = "idmastertrader=" + MastertraderRUBI.id;
+                                List<copytrade> CopyTrades = db_RUBI.GetCopytradeDelByComment(commentdel);
                                 foreach (copytrade CopyTrade in CopyTrades)
                                 {
+                                    nonlive orderclose = new nonlive();
+                                    orderclose.chatid = 635860813;
+                                    orderclose.username = CopyTrade.namemt4.Split('@')[0];
+
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    db_RUBI.SendOrderToClose(ticketclose, namemt4close);
+                                    int typeorder = CopyTrade.typeorder;
+                                    string command = db_RUBI.SendOrderToClose(ticketclose, namemt4close, typeorder);
+                                    string keyword = command.Split(' ')[0];
+                                    orderclose.keyword = keyword;
+                                    orderclose.name_mt4 = CopyTrade.namemt4;
+                                    orderclose.command = command;
+                                    orderclose.datetime = DateTime.Now.ToString();
+                                    db_RUBI.InsertNonLive(orderclose);
                                 }
                             }
                         }
@@ -234,7 +242,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            //RUBI.Start();
+            RUBI.Start();
             if (runRUBI == false)
                 RUBI.Abort();
 
@@ -301,7 +309,7 @@ namespace TradeFollowLiteForex
                             if (db_StevenHulk.DeleteClosemastertrader(MastertraderStevenHulk.md5, str_hashmd5))
                             {
                                 string commentdel = "idmastertrader=" + MastertraderStevenHulk.id;
-                                List<copytrade> CopyTrades = db_StevenHulk.GetCopytradeByComment(commentdel);
+                                List<copytrade> CopyTrades = db_StevenHulk.GetCopytradeDelByComment(commentdel);
                                 foreach (copytrade CopyTrade in CopyTrades)
                                 {
                                     nonlive orderclose = new nonlive();
@@ -310,7 +318,8 @@ namespace TradeFollowLiteForex
 
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    string command = db_StevenHulk.SendOrderToClose(ticketclose, namemt4close);
+                                    int typeorder = CopyTrade.typeorder;
+                                    string command = db_StevenHulk.SendOrderToClose(ticketclose, namemt4close, typeorder);
                                     string keyword = command.Split(' ')[0];
                                     orderclose.keyword = keyword;
                                     orderclose.name_mt4 = CopyTrade.namemt4;
@@ -324,12 +333,13 @@ namespace TradeFollowLiteForex
                     catch (Exception ex)
                     {
                         Bot.SendTextMessageAsync(635860813, "Lite@StevenHulk: " + ex.StackTrace);
+                        Bot.SendTextMessageAsync(635860813, "Lite@StevenHulk: " + ex.Message);
                         runStevenHulk = false;
                     }
                     Thread.Sleep(500);
                 }
             });
-            StevenHulk.Start();
+            //StevenHulk.Start();
             if (runStevenHulk == false)
                 StevenHulk.Abort();
 
@@ -374,7 +384,7 @@ namespace TradeFollowLiteForex
                             newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
                             newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
                             newmastertraders.Add(newmastertrader);
-                            string info_InsertOrder = db_Alexngo_vn.InsertMastertrader(newmastertraders[0], "Lite", "");
+                            string info_InsertOrder = db_Alexngo_vn.InsertMastertrader(newmastertraders[0], "Lite", "Alexngo_vn");
 
                             str_hashmd5 += Util.MD5(newmastertrader.datetime + "Alexngo_vn" + "Lite") + ",";
 
@@ -390,13 +400,24 @@ namespace TradeFollowLiteForex
                         {
                             if (db_Alexngo_vn.DeleteClosemastertrader(MastertraderAlexngo_vn.md5, str_hashmd5))
                             {
-                                string md5del = MastertraderAlexngo_vn.md5;
-                                List<copytrade> CopyTrades = db_Alexngo_vn.GetCopytradeByComment(md5del);
+                                string commentdel = "idmastertrader=" + MastertraderAlexngo_vn.id;
+                                List<copytrade> CopyTrades = db_Alexngo_vn.GetCopytradeDelByComment(commentdel);
                                 foreach (copytrade CopyTrade in CopyTrades)
                                 {
+                                    nonlive orderclose = new nonlive();
+                                    orderclose.chatid = 635860813;
+                                    orderclose.username = CopyTrade.namemt4.Split('@')[0];
+
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    db_Alexngo_vn.SendOrderToClose(ticketclose, namemt4close);
+                                    int typeorder = CopyTrade.typeorder;
+                                    string command = db_Alexngo_vn.SendOrderToClose(ticketclose, namemt4close, typeorder);
+                                    string keyword = command.Split(' ')[0];
+                                    orderclose.keyword = keyword;
+                                    orderclose.name_mt4 = CopyTrade.namemt4;
+                                    orderclose.command = command;
+                                    orderclose.datetime = DateTime.Now.ToString();
+                                    db_Alexngo_vn.InsertNonLive(orderclose);
                                 }
                             }
                         }
@@ -409,7 +430,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            //Alexngo_vn.Start();
+            Alexngo_vn.Start();
             if (runAlexngo_vn == false)
                 Alexngo_vn.Abort();
 
@@ -454,7 +475,7 @@ namespace TradeFollowLiteForex
                             newmastertrader.takeprofit = double.Parse(div_content_cols[7].InnerText.Replace(" ", "").Replace("\n", ""));
                             newmastertrader.profit = double.Parse(div_content_cols[8].InnerText.Replace(" ", "").Replace("\n", "").Replace("Lợinhuận", "").Replace("USD", ""));
                             newmastertraders.Add(newmastertrader);
-                            string info_InsertOrder = db_Happytrader.InsertMastertrader(newmastertraders[0], "Lite", "");
+                            string info_InsertOrder = db_Happytrader.InsertMastertrader(newmastertraders[0], "Lite", "Happytrader");
 
                             str_hashmd5 += Util.MD5(newmastertrader.datetime + "Happytrader" + "Lite") + ",";
 
@@ -470,13 +491,24 @@ namespace TradeFollowLiteForex
                         {
                             if (db_Happytrader.DeleteClosemastertrader(MastertraderHappytrader.md5, str_hashmd5))
                             {
-                                string md5del = MastertraderHappytrader.md5;
-                                List<copytrade> CopyTrades = db_Happytrader.GetCopytradeByComment(md5del);
+                                string commentdel = "idmastertrader=" + MastertraderHappytrader.id;
+                                List<copytrade> CopyTrades = db_Happytrader.GetCopytradeDelByComment(commentdel);
                                 foreach (copytrade CopyTrade in CopyTrades)
                                 {
+                                    nonlive orderclose = new nonlive();
+                                    orderclose.chatid = 635860813;
+                                    orderclose.username = CopyTrade.namemt4.Split('@')[0];
+
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    db_Happytrader.SendOrderToClose(ticketclose, namemt4close);
+                                    int typeorder = CopyTrade.typeorder;
+                                    string command = db_Happytrader.SendOrderToClose(ticketclose, namemt4close, typeorder);
+                                    string keyword = command.Split(' ')[0];
+                                    orderclose.keyword = keyword;
+                                    orderclose.name_mt4 = CopyTrade.namemt4;
+                                    orderclose.command = command;
+                                    orderclose.datetime = DateTime.Now.ToString();
+                                    db_Happytrader.InsertNonLive(orderclose);
                                 }
                             }
                         }
@@ -489,7 +521,7 @@ namespace TradeFollowLiteForex
                     Thread.Sleep(500);
                 }
             });
-            //Happytrader.Start();
+            Happytrader.Start();
             if (runHappytrader == false)
                 Happytrader.Abort();
 
@@ -550,13 +582,24 @@ namespace TradeFollowLiteForex
                         {
                             if (db_HerryDuc.DeleteClosemastertrader(MastertraderHerryDuc.md5, str_hashmd5))
                             {
-                                string md5del = MastertraderHerryDuc.md5;
-                                List<copytrade> CopyTrades = db_HerryDuc.GetCopytradeByComment(md5del);
+                                string commentdel = "idmastertrader=" + MastertraderHerryDuc.id;
+                                List<copytrade> CopyTrades = db_HerryDuc.GetCopytradeDelByComment(commentdel);
                                 foreach (copytrade CopyTrade in CopyTrades)
                                 {
+                                    nonlive orderclose = new nonlive();
+                                    orderclose.chatid = 635860813;
+                                    orderclose.username = CopyTrade.namemt4.Split('@')[0];
+
                                     int ticketclose = CopyTrade.ticket;
                                     string namemt4close = CopyTrade.namemt4;
-                                    db_HerryDuc.SendOrderToClose(ticketclose, namemt4close);
+                                    int typeorder = CopyTrade.typeorder;
+                                    string command = db_HerryDuc.SendOrderToClose(ticketclose, namemt4close, typeorder);
+                                    string keyword = command.Split(' ')[0];
+                                    orderclose.keyword = keyword;
+                                    orderclose.name_mt4 = CopyTrade.namemt4;
+                                    orderclose.command = command;
+                                    orderclose.datetime = DateTime.Now.ToString();
+                                    db_HerryDuc.InsertNonLive(orderclose);
                                 }
                             }
                         }
